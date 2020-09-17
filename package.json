@@ -1,0 +1,23 @@
+{
+  "name": "employeetracker",
+  "version": "1.0.0",
+  "description": "project to create a node application for managing an employee database",
+  "main": "index.js",
+  "scripts": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rebgrasshopper/employeetracker.git"
+  },
+  "author": "Plover Brown",
+  "license": "GPL-3.0-or-later",
+  "bugs": {
+    "url": "https://github.com/rebgrasshopper/employeetracker/issues"
+  },
+  "homepage": "https://github.com/rebgrasshopper/employeetracker#readme",
+  "dependencies": {
+    "inquirer": "^7.3.3",
+    "mysql": "^2.18.1"
+  }
+}
