@@ -3,12 +3,17 @@ const Employee = require("./lib/employee");
 const Role = require("./lib/role");
 const Department = require("./lib/department");
 const inquirer = require("inquirer");
+const table = require("table");
 
 let employeeList = [];
+let departmentList = {};
+let departmentChoiceList = [];
 let managerList = {};
 let managerChoiceList = ["NULL"];
 let roleList = {};
 let roleChoiceList =[];
+let displayTable = [];
+
 //inquirer questions
 const questions = [
     {
@@ -56,6 +61,13 @@ const questions = [
         name: "manager",
         choices: managerChoiceList,
         when: (answers) => answers.action === "Add an employee"
+    },
+    {
+        type: "list",
+        message: "Select department: ",
+        name: "department",
+        choices: departmentChoiceList,
+        when: (answers) => answers.action === "View employees by department"
     }
 ]
 
@@ -69,42 +81,84 @@ const connection = mysql.createConnection({
     database: "employee_db"
 });
 
+//HELPER FUNCTIONS
 
-//query functions
+function renderTable(res){
+    displayTable.push(["ID", "First Name", "Last Name", "Role", "Department", "Salary", "Manager"])
+    displayTable.push(["---", "------------", "------------", "------------", "------------", "---------", "------------------"]);
+    for (const employee of res) {
+
+        //find manager name
+        let employeeManager;
+        for (let manager in managerList) {
+            if (managerList[manager] === employee.manager) {
+                employeeManager = manager;
+            }
+        }
+
+        //update displayTable
+        displayTable.push([employee.id, employee.firstName, employee.lastName, employee.title, employee.name, employee.salary, employeeManager]);
+    }
+    console.log(table.table(displayTable));
+}
+
+
+//QUERY FUNCTIONS
 
 function setVariables(){
+    //EMPLOYEES DB READ QUERY
     connection.query(
         "SELECT * FROM employees",
         (err, res) => {
             if (err) throw err;
-            //parse every employee
             for (const employee of res) {
                 //create list of employees
                 employeeList.push(`${employee.firstName}, ${employee.lastName}`);
-                //create list of managers
+
+                //create lists of managers
                 if (employee.role === 1) {
+                    //create manager object for pulling out id numbers later
                     managerList[`${employee.firstName}, ${employee.lastName}`] = employee.id;
+                    //create manager array for user input choices
                     managerChoiceList.push(`${employee.firstName}, ${employee.lastName}`)
-                };
+                };//end if employee is manager
             }//end for
-        }//end callback function
-    );//end connection.query
+        }//end callback
+    );//end employees query
+
+    //ROLES DB READ QUERY
     connection.query(
         "SELECT * FROM roles",
         function(err, res) {
-            console.log("running roles query");
             if (err) throw err;
+            //create lists of roles
             for (const role of res) {
+                //create role object for pulling out info later
                 roleList[role.title] = {
                     title: role.title,
                     id: role.id,
                     salary: role.salary,
+                    department: role.department_id,
                 };
+                //create role array for user input choices
                 roleChoiceList.push(role.title);
+            }//end for
+        }//end callback
+    )//end roles query
+
+    //DEPARTMENTS DB READ QUERY
+    connection.query(
+        "SELECT * FROM departments",
+        function(err, res) {
+            if (err) throw err;
+            
+            for (let department of res){
+                departmentList[department.name] = department.id;
+                departmentChoiceList.push(department.name);
             }
         }
     )
-}
+}//end setVariables()
 
 function addToDB(db, addition){
     connection.query(
@@ -112,6 +166,27 @@ function addToDB(db, addition){
         addition,
         function(err) {
             if (err) throw err;
+        }
+    )
+}
+
+function readAll(){
+    connection.query(
+        "SELECT employees.id, employees.firstName, employees.lastName, employees.manager, roles.title, roles.salary, departments.name FROM employees INNER JOIN roles on employees.role = roles.id INNER JOIN departments on roles.department_id = departments.id GROUP BY departments.name, roles.title, employees.firstName, employees.lastName, employees.id, roles.salary;",
+        function(err, res){
+            if (err) throw err;
+           renderTable(res);
+        }
+    )
+}
+
+function readDepartments(department) {
+    connection.query(
+        "SELECT employees.id, employees.firstName, employees.lastName, roles.title, roles.salary, departments.name FROM employees INNER JOIN roles on employees.role = roles.id INNER JOIN departments on roles.department_id = departments.id WHERE departments.name LIKE ? GROUP BY departments.name, roles.title, employees.firstName, employees.lastName, employees.id, roles.salary;",
+        department,
+        function(err, res){
+            if (err) throw err;
+            renderTable(res);
         }
     )
 }
@@ -125,21 +200,17 @@ connection.connect(function(err) {
 
     //prompt for user input
     inquirer.prompt(questions).then(function(answers){
-        console.log(answers);
         if (answers.action === "Add an employee") {
             const newEmployee = new Employee(answers.firstName, answers.lastName, roleList[answers.role].id, managerList[answers.manager]);
             addToDB("employees", newEmployee);
+
+        } else if (answers.action === "View all employees"){
+            readAll();
+        } else if (answers.action === "View employees by department"){
+            readDepartments(answers.department)
         }
-        console.log(employeeList);
-        console.log(managerList);
-        console.log(roleChoiceList);
-        console.log(roleList[answers.role].id);
-        console.log(managerList[answers.manager]);
+
 
         connection.end()
-    })
-
-
-
-    
+    })  
 })
