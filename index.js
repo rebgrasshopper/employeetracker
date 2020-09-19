@@ -31,6 +31,13 @@ const questions = [
     },
     {
         type: "list",
+        message: `Please choose an new role: `,
+        name: "chosenRole",
+        choices: roleChoiceList,
+        when: (answers) => answers.action === "Update an employee's role",
+    },
+    {
+        type: "list",
         message: `Please choose an employee to remove: `,
         name: "choice",
         choices: employeeList,
@@ -121,7 +128,7 @@ function setVariables(){
             if (err) throw err;
             for (const employee of res) {
                 //create list of employees
-                employeeList.push(`${employee.firstName}, ${employee.lastName}`);
+                employeeList.push(`${employee.firstName} ${employee.lastName}`);
 
                 //create lists of managers
                 if (employee.role === 1) {
@@ -221,6 +228,22 @@ function readManagers(manager) {
     }
 }
 
+function updateEmployeeRole(employee, role) {
+    let newRole = roleList[role].id;
+    let thisFirstName = employee.split(" ")[0];
+    let thisLastName = employee.split(" ")[1];
+
+    connection.query(
+        "UPDATE employees SET role = ? WHERE firstName = ? AND lastName = ?;",
+        [newRole, thisFirstName, thisLastName],
+        function(err, res){
+            if (err) throw err;
+            console.log(`${employee} has been reassigned as ${role}`);
+        }
+    )
+}
+
+
 //action upon DB connection
 connection.connect(function(err) {
     if (err) throw err;
@@ -243,6 +266,8 @@ connection.connect(function(err) {
             readDepartments(answers.department)
         } else if (answers.action === "View employees by manager"){
             readManagers(answers.viewManager)
+        } else if (answers.action === "Update an employee's role"){
+            updateEmployeeRole(answers.choice, answers.chosenRole);
         }
 
 
