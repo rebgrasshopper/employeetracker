@@ -8,8 +8,8 @@ const table = require("table");
 let employeeList = [];
 let departmentList = {};
 let departmentChoiceList = [];
-let managerList = {};
-let managerChoiceList = ["NULL"];
+let managerList = {"NULL":"NULL"};
+let managerChoiceList = ["NONE"];
 let roleList = {};
 let roleChoiceList =[];
 let displayTable = [];
@@ -68,7 +68,15 @@ const questions = [
         name: "department",
         choices: departmentChoiceList,
         when: (answers) => answers.action === "View employees by department"
-    }
+    },
+    {
+        type: "list",
+        message: "Select manager: ",
+        name: "viewManager",
+        choices: managerChoiceList,
+        when: (answers) => answers.action === "View employees by manager"
+    },
+
 ]
 
 
@@ -182,13 +190,35 @@ function readAll(){
 
 function readDepartments(department) {
     connection.query(
-        "SELECT employees.id, employees.firstName, employees.lastName, roles.title, roles.salary, departments.name FROM employees INNER JOIN roles on employees.role = roles.id INNER JOIN departments on roles.department_id = departments.id WHERE departments.name LIKE ? GROUP BY departments.name, roles.title, employees.firstName, employees.lastName, employees.id, roles.salary;",
+        "SELECT employees.id, employees.firstName, employees.lastName, employees.manager, roles.title, roles.salary, departments.name FROM employees INNER JOIN roles on employees.role = roles.id INNER JOIN departments on roles.department_id = departments.id WHERE departments.name LIKE ? GROUP BY departments.name, roles.title, employees.firstName, employees.lastName, employees.id, roles.salary;",
         department,
         function(err, res){
             if (err) throw err;
             renderTable(res);
         }
     )
+}
+
+function readManagers(manager) {
+    let query;
+    if (!(manager === "NONE")){
+        connection.query(
+            "SELECT employees.id, employees.firstName, employees.lastName, roles.title, employees.manager, roles.salary, departments.name FROM employees INNER JOIN roles on employees.role = roles.id INNER JOIN departments on roles.department_id = departments.id WHERE employees.manager = ? GROUP BY departments.name, roles.title, employees.firstName, employees.lastName, employees.id, roles.salary;",
+            managerList[manager],
+            function(err, res) {
+                if (err) throw err;
+                renderTable(res);
+            }
+        )
+    } else {
+        connection.query(
+            "SELECT employees.id, employees.firstName, employees.lastName, roles.title, employees.manager, roles.salary, departments.name FROM employees INNER JOIN roles on employees.role = roles.id INNER JOIN departments on roles.department_id = departments.id WHERE employees.manager IS NULL GROUP BY departments.name, roles.title, employees.firstName, employees.lastName, employees.id, roles.salary;",
+            function(err, res) {
+                if (err) throw err;
+                renderTable(res);
+            }
+        )
+    }
 }
 
 //action upon DB connection
@@ -201,6 +231,9 @@ connection.connect(function(err) {
     //prompt for user input
     inquirer.prompt(questions).then(function(answers){
         if (answers.action === "Add an employee") {
+            if (answers.manager === "NONE"){
+                answers.manager = "NULL"
+            }
             const newEmployee = new Employee(answers.firstName, answers.lastName, roleList[answers.role].id, managerList[answers.manager]);
             addToDB("employees", newEmployee);
 
@@ -208,6 +241,8 @@ connection.connect(function(err) {
             readAll();
         } else if (answers.action === "View employees by department"){
             readDepartments(answers.department)
+        } else if (answers.action === "View employees by manager"){
+            readManagers(answers.viewManager)
         }
 
 
