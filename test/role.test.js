@@ -21,4 +21,4 @@ test("Can get departmentId", () => {
     const departmentId = 2;
     const e = new Role("Manager", 100000, departmentId);
     expect(e.getDepartmentId()).toBe(departmentId);
-})
+});

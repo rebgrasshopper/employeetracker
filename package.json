@@ -4,8 +4,8 @@
   "description": "project to create a node application for managing an employee database",
   "main": "index.js",
   "directories": {
-    "lib":"lib",
-    "test":"test"
+    "lib": "lib",
+    "test": "test"
   },
   "scripts": {
     "test": "jest ==verbose test/*"
