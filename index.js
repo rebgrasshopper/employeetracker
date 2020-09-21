@@ -89,9 +89,11 @@ connections.connection.connect(function(err) {
     //prompt for user input
     inquirer.prompt(questions).then(function(answers){
         if (answers.action === "Add an employee") {
+            //change out NONE for the mySQL parseable NULL
             if (answers.manager === "NONE"){
                 answers.manager = "NULL"
             }
+            //create an object with the employee information to feed the DB
             const newEmployee = new Employee(answers.firstName, answers.lastName, queries.roleList[answers.role].id, queries.managerList[answers.manager]);
             queries.addToDB("employees", newEmployee);
 
@@ -103,6 +105,10 @@ connections.connection.connect(function(err) {
             queries.readManagers(answers.viewManager)
         } else if (answers.action === "Update an employee's role"){
             queries.updateEmployeeRole(answers.choice, answers.chosenRole);
+        } else if (answers.action === "View all roles"){
+            queries.viewAllRoles();
+        } else if (answers.action === "View all departments"){
+            queries.viewAllDepartments();
         }
 
 
