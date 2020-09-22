@@ -157,9 +157,9 @@ connections.connection.connect(function(err) {
         } else if (answers.action === "View employees by manager"){
             queries.readByManager(answers.viewManager)
         } else if (answers.action === "Update an employee's role"){
-            queries.updateEmployeeRole(answers.choice, answers.chosenRole);
+            queries.updateEmployee("role", answers.choice, answers.chosenRole);
         } else if (answers.action === "Update an employee's manager"){
-            queries.updateEmployeeManager(answers.choice, answers.chosenManager);
+            queries.updateEmployee("manager", answers.choice, answers.chosenManager);
         } else if (answers.action === "View all roles"){
             queries.viewAllRoles();
         } else if (answers.action === "View all departments"){
