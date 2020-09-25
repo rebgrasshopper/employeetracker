@@ -3,7 +3,6 @@ const Employee = require("./lib/classes/employee");
 const Role = require("./lib/classes/role");
 const Department = require("./lib/classes/department");
 const inquirer = require("inquirer");
-const { setVariables, setRoles } = require("./lib/functions/queryfunctions");
 const queries = require("./lib/functions/queryfunctions");
 
 
@@ -27,6 +26,7 @@ connections.connection.connect(function(err) {
     if (err) throw err;
     function runEmployeeTracker(){
     //Objects with IDs
+        //Set variables with employee, manager, role, and department information
         queries.setEmployeesAndManagers().then(data => {
             employeesManagers = data;
             queries.setRoles().then(data => {
@@ -37,12 +37,6 @@ connections.connection.connect(function(err) {
                 //Ask questions and act upon answers
                 inquirer.prompt(initialQuestion).then(function(answers){
                     actionAnswer = answers.action;
-                    console.log("Employees");
-                    console.log(employeesManagers);
-                    console.log("Roles");
-                    console.log(roles);
-                    console.log("Department");
-                    console.log(departments);
                     //Set inquirer questions
                     let specificQuestions = [
                         {
@@ -174,9 +168,9 @@ connections.connection.connect(function(err) {
                                 inquirer.prompt(specificQuestions).then(function(answers){
                                     //create an object with the employee information to feed the DB
                                     if (answers.manager === "NONE"){
-                                        newEmployee = new Employee(answers.firstName, answers.lastName, queries.roleList[answers.role].id);
+                                        newEmployee = new Employee(answers.firstName, answers.lastName, roles[1][answers.role].id);
                                     } else {
-                                        newEmployee = new Employee(answers.firstName, answers.lastName, queries.roleList[answers.role].id, queries.managerList[answers.manager]);
+                                        newEmployee = new Employee(answers.firstName, answers.lastName, roles[1][answers.role].id, employeesManagers[3][answers.manager]);
                                     }
                                     queries.addToDB("employees", newEmployee).then(setTimeout(runEmployeeTracker, 500));
                                 })
@@ -192,17 +186,20 @@ connections.connection.connect(function(err) {
                             break;
                         case "View employees by manager":
                                 inquirer.prompt(specificQuestions).then(function(answers){
-                                    queries.readByManager(employeesManagers[3][answers.viewManager]).then(setTimeout(runEmployeeTracker, 500));
+                                    queries.readByManager(employeesManagers[3][answers.viewManager]).then(results => {
+                                        queries.renderTable(results, employeesManagers[3])
+                                        setTimeout(runEmployeeTracker, 500);
+                                    });
                                 })
                             break;
                         case "Update an employee's role":
                                 inquirer.prompt(specificQuestions).then(function(answers){      
-                                    queries.updateEmployee("role", answers.choice, answers.chosenRole).then(setTimeout(runEmployeeTracker, 500));
+                                    queries.updateEmployee("role", answers.choice, answers.chosenRole, roles[1], employeesManagers[3], employeesManagers[1]).then(setTimeout(runEmployeeTracker, 500));
                                 })
                             break;
                         case "Update an employee's manager":
                                 inquirer.prompt(specificQuestions).then(function(answers){      
-                                    queries.updateEmployee("manager", answers.choice, answers.chosenManager).then(setTimeout(runEmployeeTracker, 500));
+                                    queries.updateEmployee("manager", answers.choice, answers.chosenManager, roles[1], employeesManagers[3], employeesManagers[1]).then(setTimeout(runEmployeeTracker, 500));
                                 })
                             break;
                         case "View all roles":
@@ -217,7 +214,7 @@ connections.connection.connect(function(err) {
                             break;
                         case "Add a role":
                                 inquirer.prompt(specificQuestions).then(function(answers){      
-                                    const newRole = new Role(answers.roleTitle, answers.roleSalary, queries.departmentList[answers.roleDepartment]);
+                                    const newRole = new Role(answers.roleTitle, answers.roleSalary, departments[1][answers.roleDepartment]);
                                     queries.addToDB("roles", newRole).then(setTimeout(runEmployeeTracker, 500));
                                 })
                             break;
@@ -229,17 +226,17 @@ connections.connection.connect(function(err) {
                             break;
                         case "Remove a role":
                                 inquirer.prompt(specificQuestions).then(function(answers){      
-                                    queries.deleteFromDB("roles", "id", queries.roleList[answers.removeRole].id, answers.removeRole).then(setTimeout(runEmployeeTracker, 500));
+                                    queries.deleteFromDB("roles", "id", roles[1][answers.removeRole].id, answers.removeRole, employeesManagers[0]).then(setTimeout(runEmployeeTracker, 500));
                                 })
                             break;
                         case "Remove a department":
                                 inquirer.prompt(specificQuestions).then(function(answers){      
-                                    queries.deleteFromDB("departments", "id", queries.departmentList[answers.removeDepartment], answers.removeDepartment).then(setTimeout(runEmployeeTracker, 500));
+                                    queries.deleteFromDB("departments", "id", departments[1][answers.removeDepartment], answers.removeDepartment, employeesManagers[0]).then(setTimeout(runEmployeeTracker, 500));
                                 })
                             break;
                         case "Remove an employee":
                                 inquirer.prompt(specificQuestions).then(function(answers){      
-                                    queries.deleteFromDB("employees", "id", queries.employeeList[answers.removeEmployee], answers.removeEmployee).then(setTimeout(runEmployeeTracker, 500));
+                                    queries.deleteFromDB("employees", "id", employeesManagers[1][answers.removeEmployee], answers.removeEmployee, employeesManagers[0]).then(setTimeout(runEmployeeTracker, 500));
                                 })
                             break;
                         case "EXIT":
