@@ -10,10 +10,28 @@ let employeesManagers;
 let roles;
 let departments;
 
+function printTitle(){
+    console.log(" ");
+    console.log(" ");
+    console.log(" ");
+    console.log("___________________________________________");
+    console.log("___  __  __  ___  __    __   _  _  ___  ___");
+    console.log("||   | \\/ |  ||_| ||   //\\\\  \\\\//  ||   || ");
+    console.log("---  ||  ||  ||   ||  ||  ||  ||   ---  ---");
+    console.log("||_  ||  ||  ||   ||_  \\\\//   ||   ||_  ||_");
+    console.log(" ____  ___    __    ___   __ __  ___  ___  ");
+    console.log("  ||   ||_|  //\\\\  // \\\\  ||//   ||   ||_| ");
+    console.log("  ||   |\\\\   |==|  ||  _  ||\\\\   ---  |\\\\  ");
+    console.log("  ||   ||\\\\  |  |  \\\\_//  || \\\\  ||_  ||\\\\ ");
+    console.log("___________________________________________");
+    console.log(" ");
+
+}
 
 //action upon DB connections.connection
 connections.connection.connect(function(err) {
     if (err) throw err;
+    printTitle();
     function runEmployeeTracker(){
     //Objects with IDs
         //Set variables with employee, manager, role, and department information
@@ -24,6 +42,7 @@ connections.connection.connect(function(err) {
                 queries.setDepartments().then(data => {
                     departments = data;
 
+                    //set inquirer questions
                     let questions = [
                         {
                             type: "list",
@@ -147,8 +166,9 @@ connections.connection.connect(function(err) {
                     ];
 
                 //Ask questions and act upon answers
+                console.log(" ");
                 inquirer.prompt(questions).then(function(answers){
-
+                    //chose action based on answers.action
                     switch(answers.action){
                         case "View all employees":
                                     queries.readAll().then(results => {
